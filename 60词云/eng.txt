@@ -1,0 +1,124 @@
+Title
+A study of an image classification algorithm based on multi-level residual connectivity
+
+
+Abstract
+Computer vision is to borrow the mechanism of human sensory activity and use computer to simulate human visual senses in order to obtain object and environment information. As one of the main tasks of computer vision, image classification can be used not only for face recognition, traffic scene recognition, image retrieval and automatic photo categorization, but also as a theoretical basis for target detection and image segmentation. In this paper, we use the existing CNN architecture network-ConvNeXt [14], by adjusting and modifying the network residual connection and convolutional structure, we achieve a balance between classification accuracy and inference speed, and are able to reduce both computation and video memory consumption while the accuracy remains basically the same, which better promotes network lightweighting.
+
+
+1 Introduction
+	To accomplish visual recognition tasks such as image classification, EfficientNet [13] mentions that today's convolutional neural networks are becoming deeper, wider, and higher resolution, and thus are always accompanied by hundreds of convolutional layers and thousands of channels, usually involving up to hundreds of millions of operations, and thus increasingly demanding in terms of computational hardware.
+In the image classification problem, we know that the horizontal and vertical contents are related to each other but not the same. In order to better extract the underlying abstract information, ERFNet [12] replaces the two-dimensional convolution kernel with two one-dimensional convolution kernels to achieve step-by-step information extraction. In this paper, the depth convolution is split on the basis of the original ConvNeXt network, and the speed and accuracy are unified by the convolution kernel fission operation.
+On the other hand, the success of resnet [5] and densenet [6] on image classification tasks has shown us the great potential of shortcut branching, and in this paper, we propose a multi-level shortcut connection structure with layer-hopping connections on top of the above two networks to help information flow better within the network.
+We evaluated the model on the classification task of imagenet1k [11], and a series of experiments under the control variables approach showed the effectiveness and better performance of the network structure. Compared to the baseline network ConvNeXt, our network allows information to circulate through multiple different feature channels, achieves a balance between accuracy and inference speed, significantly reduces the memory footprint while keeping FLOPs and accuracy essentially unchanged, and also finds a way to reduce variability in the output of a homogeneous structured network.
+
+
+2 Related Work
+Image classification is one of the most classical tasks in computer vision, which can be used for both face recognition to provide bioinformation data to public security, defense and financial sectors, and in transportation to achieve scene understanding and segmentation and to lay the foundation for research on autonomous driving.
+There are two methods of image classification: manual feature extraction and machine learning features. Before the emergence of deep learning, image classification extracted features by specific computation, and global description of images was performed by using a combination of principal component analysis techniques [1] and Fisher linear discriminant [15]. That is, the principal component analysis technique is first used to perform the dimensionality reduction operation on the input, noise filtering and data fitting, and then the label information of the image is used to maximize the ratio of distance and standard deviation by Fisher linear discrimination to solve the classification problem. However, due to the long time, low accuracy, and low upper limit, the traditional classification methods faded away after the emergence of deep convolutional neural networks by Alex [2].
+Since then, it is widely believed that a deeper network will bring better results, and GoogLeNet [3] and VGG [4] are developed based on this trend of thinking. Among them, Christian Szegedy introduced multi-scale perceptual field and multi-scale fusion by designing the Inception structure to artificially construct sparse connections, while Karen Simonyan∗ & Andrew Zisserman steadily increased the network depth by smaller convolutional kernels with more convolutional layers. These two typical networks have raised the upper limit of image recognition accuracy and attracted more people to the field for further research.
+Simply increasing the network depth can cause problems such as "gradient disappearance" and "gradient explosion", which are essentially caused by multiple concatenation of multiplications during backpropagation, resulting in unstable weight updates. Both ResNet [5] and DenseNet [6] are designed to mitigate the "gradient disappearance" phenomenon by adding "shortcut" connections without changing the number of parameters. Among them, ResNet has become the benchmark network for many network designs due to its balance of performance and effectiveness.
+With the development of portable electronic devices (cell phones, tablets, etc.), the research direction has shifted to lightweight models. mobileNet [7] and ShuffleNet [8] are the results of lightweighting. that greatly reduces the number of training parameters; Xiangyu Zhang proposed the idea of channel shuffling based on MobileNet to enhance the flow and interaction of information within the network; Eduardo Romera [12] replaced the original square convolution with two striped convolutions to extract horizontal and vertical information, respectively.
+With the popularity of transformer [9], traditional convolutional nerve warp networks encountered challenges, and in 2022, Zhuang Liu [10] and others proposed the ConvNeXt network by imitating the swim transformer and heavily fine-tuning the traditional CNN structure, which again broke the upper limit of accuracy in the ImageNet [11] dataset.
+
+3 Fusion Convolutional Networks
+3.1 Multi-level shortcut connection structure
+In ResNet, DenseNet and ConvNeXt, the shortcut branches exist in a single block, and the different Stages are still tandem spliced, which brings problems to the reuse of feature maps: the uniform tandem splicing will weaken the capability of shortcut branches, and the geometric growth of branches greatly increases the memory consumption. In this paper, we propose a multi-level shortcut connection structure, adding a direct connection from downsampling to the output of Stage on top of the original ConvNeXt structure. containing 3 Blocks in each Stage as an example, and the Stage structures in the ConvNeXt, DenseNet, ResNet, and Ours network structures are shown from left to right.
+
+
+
+
+Figure 1 Network flow chart of DenseNet and ResNet
+
+
+Figure 2 Network flow diagram of ConvNeXt-tiny and Ours-tiny
+
+Figure 3 Comparison of Stage structures of ConvNeXt, DenseNet, ResNet, Ours
+
+By analyzing Figure 1, it is easy to see that the residual structure in ResNet and DenseNet networks is confined to a single Block. Once we abstract the complete Stage as a whole, the flow chart of the network shows a purely tandem structure.
+In Figure 2, Ours' network flowchart shows a structure in which another layer of residual connections is added to each Stage structure on top of the blocks that already have a residual connection structure, which we call "multi-level shortcut connections". This structure can ensure the flow of feature map information across Stages and avoid losing the original feature map information in the subsequent feature extraction and fusion operations.
+Figure 3 shows that all three networks add residual connections to the Blocks, and the updates made by Ours are not at the Block level, but at the Stage and overall network structure level. Taking a Stage containing three Blocks as an example, we can describe this structure more precisely by using Figure 4.
+
+
+
+Figure 4 Detailed description of the Stage structure in different networks
+
+Multi-level shortcut connections better allow data to flow through different network tiers, and because the synchronous pooling design balances the number of shortcut connections, it effectively reduces the memory footprint in hardware compared to other mainstream networks, achieving better price/performance.
+
+3.2 Convolutional kernel splitting and fission
+	Modern neural networks usually balance the computational effort and model performance by a combination of dimensionality enhancement and dimensionality reduction [5,7]. Most of the convolutions used in traditional networks are square convolutions, and the present network tries to replace the square convolution with two bar convolutions with the same feeling field, and the two layers of convolution add a layer of nonlinear transformation than the single layer of convolution, and the expressiveness of the network is enhanced. On the other hand, the 3*3 square convolution takes into account the influence of eight neighboring pixels for each individual pixel, which is prone to the phenomenon of "false correlation" and the network pays too much attention to the contextual information, which may infer objects from the surrounding background that do not directly appear on the graph.
+In this paper, we not only change the original 7*7 convolution to 3*3 convolution, but also fracture the 3*3 convolution into a series of asymmetric 3*1 and 1*3 convolutions, in an attempt to improve the expressive power of the network while reducing the computational effort. Figure 5 depicts in detail how to replace the traditional convolution with decomposed convolution.
+
+
+Figure 5 Illustration of decomposition convolution
+For a deep convolution with a convolution kernel size of 7*7 and a channel number of dim, the number of parameters can be calculated from Equation 1:
+    〖kernal size〗^2*in channel*out channel*num
+=7^2*1*1*dim
+=49*dim 
+On the other hand, after fracturing the ordinary 7*7 convolution into 1*7 and 7*1 one-dimensional convolutions, the number of parameters can be calculated from Equation 2:
+     kernal size vertical*kernal size horizontal*in channel*out channel*num*2
+=7*1*1*1*dim*2
+=14*dim 
+It can be intuitively seen that by splitting and fissioning the deep convolutional kernel, it is possible to reduce the number of convolutional partial parameters to 28.57% of the original convolutional kernel, while adding a nonlinear representation between the two layers of the structure, focusing more on the use of horizontal and vertical messages, and greatly reducing the size of the network.
+
+3.3 Integrated application network of multi-level residual connectivity and decomposed convolution
+	In this paper, two modifications are made to the previous work. On the one hand, the interaction of data information at different stages is achieved by adding a multi-level residual connection structure; on the other hand, the number of parameters of the model is reduced and the size of the network is decreased by splitting and fissioning the convolution kernel. Figure 6 shows the complete structure of the network proposed in this paper.
+
+
+
+Figure 6 Complete structure of Ours network, where n1, n2, n3 and n4 are the number of Blocks that can be selected
+4 Experiment
+	We mainly evaluate the model on the ImageNet 2012 [11] classification dataset. The experiment is only to verify the effectiveness of the network structure, and to reduce the computational effort, we randomly select 300 from 1k categories as the samples for training and testing. To ensure the reliability of the model, all experiments follow the pre-training approach and learning rate decay strategy of ConvNeXt.
+
+4.1 Ablation experiments
+	The core idea of this network is in multi-level shortcut connection and convolutional splitting and fission, we will perform and evaluate ablation experiments for each of these two points. All experimental data are obtained from a single NVIDIA GeForce RTX3090 device.
+
+4.1.1 Ablation study of multi-level shortcut connection network
+	To analyze the effectiveness of multilevel shortcut connections, we compare both the accuracy, number of parameters, and FLOPs of the ConvNeXt baseline network and the network after adding multilevel shortcut connections at 30 iterations, as shown in Table 1.
+
+Table 1 Ablation experiments with multilevel residual connections (where acc1 is the probability that the highest probability outcome is the true label, and acc5 is the probability that the first five probability outcomes contain the true label)
+
+Figure 7 Differentiation Comparison
+As we can see from Table 1, the multilevel shortcut connection is essentially a residual connection, i.e., adding this structure does not affect the number of parameters or the computational effort of the network, but it is effective in mitigating the "gradient disappearance" phenomenon when performing backpropagation.
+In addition, Figure 7 shows the difference in accuracy between different networks. With the addition of multi-level shortcut connections, the shallow network becomes more influential on the network output, leaving the deeper network with only small fine-tuning of the results, weakening the differences between networks of the same structure and different sizes, and facilitating the selection of a lighter network (at the expense of less performance) for deployment.
+
+Table 2 records the test time and single graph rate before and after adding multilevel residual connections to the 300-class dataset, and we can see that although the added structure increases the overall training time of the network during the training phase described above, the modified network has a faster test speed than the original network during the testing phase.
+
+Table 2 Test time (average time is the test time for each image during the test)
+
+From Table 8, we can see that the proposed network has a better performance in single graph test rate with a small decrease in accuracy. For three different sizes of networks, the rate is improved by 5.19%, 5.36% and 4.08% respectively compared to the original network, and the modification in small size network has a more obvious improvement.
+
+4.1.2 Study on the ablation of convolutional kernel splitting and fission
+	To demonstrate the performance of convolutional kernel splitting and fission, comparative experiments were conducted using 7*7 deep convolution, 3*3 regular convolution, 3*3 deep convolution and two striped convolution. We compared the accuracy, number of parameters, FLOPs, maximum memory occupation and training time of these four convolutions at 30 iterations, as shown in Table 3.
+
+Table 3 Ablation experiments with different convolution kernels
+As can be seen in Table 3, the use of 3*3 decomposed convolution results in a significant improvement in computation, number of parameters, maximum memory usage, and training time.
+Compared with the deep convolution of the original network, the decomposed convolution reduces the computation volume by 6.71% for the tiny size network, 6.12% for the small size network, and 4.68% for the base size network, i.e., the smaller the network structure, the better the decomposed convolution optimizes the computation volume. In terms of the number of parameters, the decomposed convolution reduces the number of parameters by 3.06% for the tiny-sized network, 3.84% for the small-sized network, and 2.95% for the base-sized network, i.e., the decomposed convolution optimizes the number of parameters in the small-sized network structure; in terms of the maximum memory usage, the decomposed convolution reduces the number of parameters by 21.45% for the tiny-sized network, 8.92% for the small-sized network, and 8.92% for the base-sized network. The smaller the network structure is, the better the decomposed convolution can optimize the maximum memory consumption; in terms of training time, the decomposed convolution can reduce 17.83% for the tiny size network, 6.73% for the small size network, and 12.53% for the base size network, i.e., the decomposed convolution can optimize the maximum memory consumption in the tiny size network. network structure, the decomposed convolution is optimal for training time optimization.
+	
+4.2 Comparison with ResNet and DenseNet
+4.2.1 Accuracy comparison
+	ResNet and DenseNet, as the proposed and leading residual connectivity networks, we also compare the differences between our network structure and these two, when the number of experimental iterations are both 30, as shown in Table 4.
+
+Table 4 Comparison of three types of networks
+As can be seen from Table 4, our network improves to some extent over ResNet and DenseNet of various sizes, with acc1 improving by a maximum of 10.56% and a minimum of 2.91%, and acc5 improving by a maximum of 6.41% and a minimum of 1.45%, i.e., the improvement of the algorithm proposed in this paper will be more obvious for acc1 than for acc5. The improvement is more obvious than that of acc5.
+
+4.2.2 Comparison of memory usage
+	We know that the longer the feature map stays in the computer, the more it occupies the video memory. Based on this, our network balances the relationship between feature map retention time and accuracy based on feature reuse, and we compare the video memory occupation between the three in a single iteration state with batch sizes of 32,64,128, as shown in Table 5.
+
+Table 5 Video memory usage of different networks
+As can be seen in Table 5, our network is optimal in terms of memory consumption and computation, and has the largest improvement in memory consumption over DenseNet121 compared to various networks: compared to the classical network ResNet50, the maximum memory consumption is reduced by 23.34% for batch 32, 23.43% for batch 64, and 24.37% for batch 128. The maximum memory consumption is reduced by 24.37% for batch 128. From the data, we can find that the algorithm proposed in this paper has better performance improvement on the maximum memory footprint for larger batches.
+The full process memory footprint for different networks is shown in Figure 8.
+
+
+
+Figure 8 From top to bottom, the four networks of ConvNeXt, DenseNet, ResNet and Ours are shown, from left to right, for batch size taking values of 32, 64 and 128, respectively
+The network used in this paper is capable of classifying images on the ImageNet dataset, and Figure 9 shows some of the classification results.
+Figure 9 Partial display of results after network classification (the number before each row is the classification name of the dataset in the code)
+Figure 9 shows some of the correctly classified results from this experiment, where each row corresponds to a different class of objects. The large size of the objects in the figure and their more central position make it possible to ensure a high recognition level even in multiple pooling.
+
+
+Summary and Outlook
+	We proposed a multi-level residual connection based on the original baseline network, and also performed a simultaneous pooling operation on the connection part to ensure the direct connection feature of the network, which allows the information of the feature map to be passed to the subsequent training in its original form several times. On the other hand, we also adjusted the convolutional structure to make the network as lightweight as possible and reduce the memory consumption while ensuring the accuracy.
+	In this paper, the structure of the neural network is adjusted to optimize the network by using the residual structure again, and we will try to apply this adjustment in target recognition, image segmentation and other subdivision fields. We also hope that this multi-level residual connection structure can inspire the subsequent researchers to achieve some more advanced functions.
+
+
