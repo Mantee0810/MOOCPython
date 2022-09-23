@@ -1,0 +1,6 @@
+# Fill in the program that needs to be launched with one click here
+# Format for launching a program: add a line with the (absolute) address information of the program
+# Format for starting a web page: add a line looks like
+#                                   start+(space)+specified web page
+D:\QQ\Bin\QQ.exe
+start https://www.bilibili.com/?spm_id_from=333.337.0.0
